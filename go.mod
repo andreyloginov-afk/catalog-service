@@ -1,3 +1,3 @@
-module github.com/andreyloginov-afk/my-awesome-service
+module github.com/andreyloginov-afk/catalog-service
 
 go 1.24.1

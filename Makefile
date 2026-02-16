@@ -26,3 +26,12 @@ build: ## Сборка приложения
 .PHONY: test
 test: ## Запуск тестов
 	go test -count=1 -v ./...
+
+.PHONY: run
+run: build
+	./bin/app
+
+
+.PHONY: clean
+clean:
+	rm -f ./bin/app
