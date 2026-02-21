@@ -3,6 +3,7 @@ package section
 type (
 	Processor struct {
 		WebServer ProcessorWebServer `split_words:"true"`
+		Http      interface{}
 	}
 
 	ProcessorWebServer struct {

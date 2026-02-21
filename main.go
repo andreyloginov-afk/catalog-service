@@ -1,22 +1,30 @@
 package main
 
 import (
-	"log"
-
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config"
+	rhealth "github.com/andreyloginov-afk/catalog-service/internal/app/handler/health"
+	rprocessor "github.com/andreyloginov-afk/catalog-service/internal/app/processor/http"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	// Загружаем конфигурацию
 	config.Load()
-
 	cfg := config.Root
 
-	log.Printf("Server will start on port: %d", cfg.Processor.WebServer.ListenPort)
-	log.Printf("Database: %s@%s/%s",
-		cfg.Repository.Postgres.Username,
-		cfg.Repository.Postgres.Address,
-		cfg.Repository.Postgres.Name)
-	log.Printf("Environment: %s, LogLevel: %s",
-		cfg.Monitor.Environment,
-		cfg.Monitor.LogLevel)
+	// Создаём handler health-check
+	healthHandler := rhealth.NewHandler()
+
+	// Создаём HTTP сервер
+	httpServer := rprocessor.NewHttp(
+		healthHandler,
+		cfg.Processor.WebServer,
+	)
+
+	// Запускаем сервер
+	if err := httpServer.Serve(); err != nil {
+		log.Fatal().
+			Err(err).
+			Msg("HTTP server failed")
+	}
 }
