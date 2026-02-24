@@ -19,33 +19,31 @@ type httpProc struct {
 func NewHttp(hHealth rhandler.Health, cfg section.ProcessorWebServer) *httpProc {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(handlerNotFound)
-
 	vGenericRegHealthCheck(r, hHealth)
 
-	err := r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+	// Логирование маршрутов (только для непустых)
+	r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		path, err := route.GetPathTemplate()
 		if err != nil {
-			//nolint:nilerr // пропускаем маршруты без шаблона пути
+			//nolint:nilerr
 			return nil
 		}
-		methods, err := route.GetMethods()
-		if err != nil {
+
+		methods, _ := route.GetMethods()
+		if len(methods) == 0 {
 			methods = []string{"ANY"}
 		}
 
-		log.Info().
-			Str("path", path).
-			Strs("methods", methods).
-			Msg("registered route")
-
+		if path != "" && len(methods) > 0 {
+			log.Info().
+				Str("path", path).
+				Strs("methods", methods).
+				Msg("registered route")
+		}
 		return nil
 	})
-	if err != nil {
-		log.Error().Err(err).Msg("failed to walk routes")
-	}
 
 	addr := fmt.Sprintf(":%d", cfg.ListenPort)
-
 	p := httpProc{
 		addr: addr,
 		server: http.Server{
@@ -54,7 +52,6 @@ func NewHttp(hHealth rhandler.Health, cfg section.ProcessorWebServer) *httpProc 
 			ReadHeaderTimeout: 5 * time.Second,
 		},
 	}
-
 	return &p
 }
 

@@ -36,3 +36,4 @@ config.local.*  # локальные настройки проекта.env
 
 .idea/
 catalog-service
+bin/app
