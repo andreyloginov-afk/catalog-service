@@ -27,8 +27,13 @@ vendor/         # папка с зависимостями Go Modules (може�
 *.log           # лог-файлы приложения
 *.tmp           # временные файлы
 
+
 # -----------------------
 # Environment and local config
 # -----------------------
-.env            # переменные окружения
-config.local.*  # локальные настройки проекта
+.env
+config.local.*  # локальные настройки проекта.env
+
+.idea/
+catalog-service
+bin/app
