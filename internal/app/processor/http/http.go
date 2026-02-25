@@ -21,18 +21,9 @@ func NewHttp(hHealth rhandler.Health, cfg section.ProcessorWebServer) *httpProc 
 	r.NotFoundHandler = http.HandlerFunc(handlerNotFound)
 	vGenericRegHealthCheck(r, hHealth)
 
-	// Логирование маршрутов (только для непустых)
-	r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
-		path, err := route.GetPathTemplate()
-		if err != nil {
-			//nolint:nilerr
-			return nil
-		}
-
+	_ = r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		path, _ := route.GetPathTemplate()
 		methods, _ := route.GetMethods()
-		if len(methods) == 0 {
-			methods = []string{"ANY"}
-		}
 
 		if path != "" && len(methods) > 0 {
 			log.Info().
@@ -44,6 +35,7 @@ func NewHttp(hHealth rhandler.Health, cfg section.ProcessorWebServer) *httpProc 
 	})
 
 	addr := fmt.Sprintf(":%d", cfg.ListenPort)
+
 	p := httpProc{
 		addr: addr,
 		server: http.Server{
@@ -52,6 +44,7 @@ func NewHttp(hHealth rhandler.Health, cfg section.ProcessorWebServer) *httpProc 
 			ReadHeaderTimeout: 5 * time.Second,
 		},
 	}
+
 	return &p
 }
 
