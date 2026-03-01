@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config/section"
 	"github.com/joho/godotenv"
@@ -14,13 +14,15 @@ type Config struct {
 	Monitor    section.Monitor    `split_words:"true"`
 }
 
-var Root Config
-
-func Load() {
+func Load() (*Config, error) {
+	// Загружаем .env
 	_ = godotenv.Load()
 
-	err := envconfig.Process("APP", &Root)
-	if err != nil {
-		log.Fatal("Failed to parse config:", err)
+	var cfg Config
+
+	if err := envconfig.Process("APP", &cfg); err != nil {
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
+
+	return &cfg, nil
 }
