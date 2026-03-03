@@ -74,31 +74,35 @@ func (c *Client) Migrate(ctx context.Context) (oldVer, newVer, applied int64, er
 	if err = migrations.Discover(migration.Postgres); err != nil {
 		return 0, 0, 0, fmt.Errorf("discover migrations: %w", err)
 	}
-	//тут опция мигратора с таблицой
+
+	// тут migrator с опциями
 	migrator := migrate.NewMigrator(
 		c.rawBunDB,
 		migrations,
-		migrate.WithTableName("catalog_migrations"),
+		migrate.WithTableName(c.cfg.MigrationTable),
+		migrate.WithLocksTableName(c.cfg.MigrationTable+"_lock"),
+		migrate.WithMarkAppliedOnSuccess(true),
 	)
 
+	// инициализация
 	if err = migrator.Init(ctx); err != nil {
 		return 0, 0, 0, fmt.Errorf("migrator init: %w", err)
 	}
 
-	// Тут версия ДО миграции
+	// версия ДО
 	appliedMigrations, err := migrator.AppliedMigrations(ctx)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("get applied migrations: %w", err)
 	}
 	oldVer = appliedMigrations.LastGroupID()
 
-	//  тут применяем миграции
+	// применяем миграции
 	group, err := migrator.Migrate(ctx)
 	if err != nil {
 		return oldVer, oldVer, 0, fmt.Errorf("migrate: %w", err)
 	}
 
-	// Если ничего не применилось
+	// если ничего не применилось
 	if group.IsZero() {
 		return oldVer, oldVer, 0, nil
 	}
