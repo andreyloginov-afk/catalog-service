@@ -11,31 +11,42 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.Load()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load config")
-	}
+	//конфиг
+	config.Load()
+	cfg := config.Root
 
+	// PostgreSQL
 	pgClient, err := rcpostgres.NewConn(ctx, cfg.Repository.Postgres)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to PostgreSQL")
+		log.Fatal().
+			Err(err).
+			Msg("failed to connect to PostgreSQL")
 	}
+	defer func() {
+		if err := pgClient.Close(); err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to close PostgreSQL connection")
+		}
+	}()
 
-	oldVer, newVer, _, err := pgClient.Migrate(ctx)
+	// миграции
+	oldVer, newVer, applied, err := pgClient.Migrate(ctx)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to run migrations")
+		log.Fatal().
+			Err(err).
+			Msg("failed to run migrations")
 	}
 
-	if oldVer != newVer {
+	if applied > 0 {
 		log.Info().
 			Int64("old_version", oldVer).
 			Int64("new_version", newVer).
-			Msg("Database migrated")
+			Int64("applied", applied).
+			Msg("database migrated")
 	} else {
 		log.Info().
-			Int64("old_version", oldVer).
-			Int64("new_version", newVer).
-			Msg("Database is up to date")
+			Int64("version", oldVer).
+			Msg("database is up to date")
 	}
-
 }

@@ -15,19 +15,22 @@ import (
 	"github.com/uptrace/bun/migrate"
 )
 
-type Client struct {
-	bunDB *bun.DB
-	cfg   section.RepositoryPostgres
-	db    *sql.DB
-}
+type (
+	Client struct {
+		_bunDB
+		rawBunDB *bun.DB
+		cfg      section.RepositoryPostgres
+	}
+	_bunDB = bun.IDB
+)
 
 func (c *Client) GetRawBunDB() *bun.DB {
-	return c.bunDB
+	return c.rawBunDB
 }
 
 func (c *Client) Close() error {
-	if c.db != nil {
-		return c.db.Close()
+	if c.rawBunDB != nil {
+		return c.rawBunDB.Close()
 	}
 	return nil
 }
@@ -48,7 +51,8 @@ func NewConn(ctx context.Context, cfg section.RepositoryPostgres) (*Client, erro
 
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 	sqldb.SetMaxOpenConns(10)
-	sqldb.SetConnMaxLifetime(time.Hour)
+
+	bunDB := bun.NewDB(sqldb, pgdialect.New())
 
 	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
@@ -58,12 +62,10 @@ func NewConn(ctx context.Context, cfg section.RepositoryPostgres) (*Client, erro
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
-	bunDB := bun.NewDB(sqldb, pgdialect.New())
-
 	return &Client{
-		bunDB: bunDB,
-		cfg:   cfg,
-		db:    sqldb,
+		_bunDB:   bunDB,
+		rawBunDB: bunDB,
+		cfg:      cfg,
 	}, nil
 }
 
@@ -72,42 +74,37 @@ func (c *Client) Migrate(ctx context.Context) (oldVer, newVer, applied int64, er
 	if err = migrations.Discover(migration.Postgres); err != nil {
 		return 0, 0, 0, fmt.Errorf("discover migrations: %w", err)
 	}
-
-	migrator := migrate.NewMigrator(c.bunDB, migrations)
+	//тут опция мигратора с таблицой
+	migrator := migrate.NewMigrator(
+		c.rawBunDB,
+		migrations,
+		migrate.WithTableName("catalog_migrations"),
+	)
 
 	if err = migrator.Init(ctx); err != nil {
 		return 0, 0, 0, fmt.Errorf("migrator init: %w", err)
 	}
 
-	if err = migrator.Lock(ctx); err != nil {
-		return 0, 0, 0, fmt.Errorf("migrator lock: %w", err)
-	}
-	defer func() {
-		if unlockErr := migrator.Unlock(ctx); unlockErr != nil && err == nil {
-			err = fmt.Errorf("migrator unlock: %w", unlockErr)
-		}
-	}()
-
-	before, err := migrator.AppliedMigrations(ctx)
+	// Тут версия ДО миграции
+	appliedMigrations, err := migrator.AppliedMigrations(ctx)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("get applied migrations (before): %w", err)
+		return 0, 0, 0, fmt.Errorf("get applied migrations: %w", err)
 	}
-	oldVer = before.LastGroupID()
+	oldVer = appliedMigrations.LastGroupID()
 
+	//  тут применяем миграции
 	group, err := migrator.Migrate(ctx)
 	if err != nil {
 		return oldVer, oldVer, 0, fmt.Errorf("migrate: %w", err)
 	}
 
-	after, err := migrator.AppliedMigrations(ctx)
-	if err != nil {
-		return oldVer, oldVer, 0, fmt.Errorf("get applied migrations (after): %w", err)
-	}
-	newVer = after.LastGroupID()
-
-	if !group.IsZero() {
-		applied = int64(len(group.Migrations))
+	// Если ничего не применилось
+	if group.IsZero() {
+		return oldVer, oldVer, 0, nil
 	}
 
-	return oldVer, newVer, applied, err
+	newVer = group.ID
+	applied = int64(len(group.Migrations))
+
+	return oldVer, newVer, applied, nil
 }
