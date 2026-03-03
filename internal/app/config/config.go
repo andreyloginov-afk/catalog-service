@@ -18,7 +18,6 @@ var Root Config
 
 func Load() {
 	_ = godotenv.Load()
-
 	err := envconfig.Process("APP", &Root)
 	if err != nil {
 		log.Fatal("Failed to parse config:", err)
