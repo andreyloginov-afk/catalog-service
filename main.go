@@ -49,4 +49,5 @@ func main() {
 			Int64("version", oldVer).
 			Msg("database is up to date")
 	}
+
 }
