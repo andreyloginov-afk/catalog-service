@@ -1,9 +1,9 @@
-package http
+package rprocessor
 
 import (
 	"net/http"
 
-	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler"
+	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http"
 	"github.com/gorilla/mux"
 )
 
