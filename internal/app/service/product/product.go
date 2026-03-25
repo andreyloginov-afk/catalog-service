@@ -76,6 +76,9 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestProd
 	}
 
 	product.Name = req.Name
+	product.Description = req.Description
+	product.Price = req.Price
+	product.CategoryGuid = req.CategoryGUID
 	product.UpdatedAt = time.Now()
 
 	if err := s.repoProduct.Update(ctx, product); err != nil {
