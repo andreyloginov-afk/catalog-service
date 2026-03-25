@@ -1,9 +1,9 @@
-package health
+package rhealth
 
 import (
 	"net/http"
 
-	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler"
+	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http"
 )
 
 type handler struct{}

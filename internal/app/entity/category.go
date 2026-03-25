@@ -16,3 +16,31 @@ type Category struct {
 	CreatedAt time.Time `bun:"created_at,default:current_timestamp"`
 	UpdatedAt time.Time `bun:"updated_at,default:current_timestamp"`
 }
+type RequestCategoryCreate struct {
+	Name string `json:"name"`
+}
+
+func (r RequestCategoryCreate) Validate() error {
+	if r.Name == "" {
+		return ErrIncorrectParametrs
+	}
+	return nil
+}
+
+type RequestCategoryUpdate struct {
+	Name string `json:"name"`
+}
+
+func (r RequestCategoryUpdate) Validate() error {
+	if r.Name == "" {
+		return ErrIncorrectParametrs
+	}
+	return nil
+}
+
+type ResponseCategory struct {
+	GUID      uuid.UUID `json:"guid"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

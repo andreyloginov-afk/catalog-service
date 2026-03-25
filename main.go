@@ -4,7 +4,15 @@ import (
 	"context"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config"
+	hcategory "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http/category"
+	rhealth "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http/health"
+	hproduct "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http/product"
+	rprocessor "github.com/andreyloginov-afk/catalog-service/internal/app/processor/http"
+	pcategory "github.com/andreyloginov-afk/catalog-service/internal/app/repository/category"
 	rcpostgres "github.com/andreyloginov-afk/catalog-service/internal/app/repository/conn/postgres"
+	pproduct "github.com/andreyloginov-afk/catalog-service/internal/app/repository/product"
+	scategory "github.com/andreyloginov-afk/catalog-service/internal/app/service/category"
+	sproduct "github.com/andreyloginov-afk/catalog-service/internal/app/service/product"
 	"github.com/rs/zerolog/log"
 )
 
@@ -49,5 +57,28 @@ func main() {
 			Int64("version", oldVer).
 			Msg("database is up to date")
 	}
+	// Репозитории
+	categoryRepo := pcategory.NewRepoFromPostgres(pgClient)
+	productRepo := pproduct.NewRepoFromPostgres(pgClient)
 
+	// Сервисы
+	categorySvc := scategory.NewService(categoryRepo, productRepo)
+	productSvc := sproduct.NewService(productRepo, categoryRepo)
+
+	// Хендлеры
+	healthHandler := rhealth.NewHandler()
+	categoryHandler := hcategory.NewHandler(categorySvc)
+	productHandler := hproduct.NewHandler(productSvc)
+
+	// сервер
+	server := rprocessor.NewHttp(
+		healthHandler,
+		categoryHandler,
+		productHandler,
+		cfg.Processor.WebServer,
+	)
+
+	if err := server.Serve(); err != nil {
+		log.Fatal().Err(err).Msg("server failed")
+	}
 }

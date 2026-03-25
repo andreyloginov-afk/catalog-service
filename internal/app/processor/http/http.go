@@ -1,4 +1,4 @@
-package http
+package rprocessor
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config/section"
-	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler"
+	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -16,10 +16,19 @@ type httpProc struct {
 	addr   string
 }
 
-func NewHttp(hHealth rhandler.Health, cfg section.ProcessorWebServer) *httpProc {
+func NewHttp(hHealth rhandler.Health, hCategory rhandler.Category, hProduct rhandler.Product, cfg section.ProcessorWebServer) *httpProc {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(handlerNotFound)
 	vGenericRegHealthCheck(r, hHealth)
+	// API v1
+	rV1 := r.PathPrefix("/v1").Subrouter()
+
+	if hCategory != nil {
+		v1RegCategoryHandler(rV1, hCategory)
+	}
+	if hProduct != nil {
+		v1RegProductHandler(rV1, hProduct)
+	}
 
 	_ = r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		path, _ := route.GetPathTemplate()
