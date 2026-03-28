@@ -8,6 +8,7 @@ import (
 	"github.com/andreyloginov-afk/catalog-service/internal/app/entity"
 	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http"
 	"github.com/andreyloginov-afk/catalog-service/internal/app/service"
+	"github.com/andreyloginov-afk/catalog-service/internal/pkg/http/binding"
 	"github.com/andreyloginov-afk/catalog-service/internal/pkg/http/httph"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -25,15 +26,14 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	// декодирование JSON
 	var req entity.RequestCategoryCreate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParametrs)
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
 	// валидация параметров
-	if err := req.Validate(); err != nil {
-		httph.SendError(w, http.StatusBadRequest, err)
+	if err := binding.ScanAndValidateJSON(r, &req); err != nil {
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
-
 	// вызов сервиса
 	category, err := h.svcCategory.Create(r.Context(), req)
 	if err != nil {
@@ -63,7 +63,7 @@ func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	guid, err := uuid.FromString(vars["guid"])
 	if err != nil {
-		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParametrs)
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
 	// вызывает сервис
@@ -85,19 +85,19 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	guid, err := uuid.FromString(vars["guid"])
 	if err != nil {
-		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParametrs)
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
 
 	var req entity.RequestCategoryUpdate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParametrs)
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
 
 	//
-	if err := req.Validate(); err != nil {
-		httph.SendError(w, http.StatusBadRequest, err)
+	if err := binding.ScanAndValidateJSON(r, &req); err != nil {
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
 
@@ -120,7 +120,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	guid, err := uuid.FromString(vars["guid"])
 	if err != nil {
-		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParametrs)
+		httph.SendError(w, http.StatusBadRequest, entity.ErrIncorrectParameters)
 		return
 	}
 
