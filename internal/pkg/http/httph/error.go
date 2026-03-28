@@ -3,7 +3,7 @@ package httph
 import "net/http"
 
 type Error struct {
-	Message string `json:"error"`
+	Massage string `json:"error"`
 }
 
 func ErrorApply(w http.ResponseWriter, code int, massage string) {
@@ -11,6 +11,6 @@ func ErrorApply(w http.ResponseWriter, code int, massage string) {
 	w.WriteHeader(code)
 
 	_ = EncodeJSON(w, Error{
-		Message: massage,
+		Massage: massage,
 	})
 }

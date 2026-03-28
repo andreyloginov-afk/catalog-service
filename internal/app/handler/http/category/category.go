@@ -54,7 +54,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: category.UpdatedAt,
 	}
 
-	httph.SendJSON(w, http.StatusCreated, resp)
+	httph.SendEncoded(w, r, http.StatusCreated, resp)
 
 }
 
@@ -157,6 +157,6 @@ func (h *handler) List(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	httph.SendJSON(w, http.StatusOK, resp)
+	httph.SendEncoded(w, r, http.StatusOK, resp)
 
 }

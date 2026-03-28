@@ -7,15 +7,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func SendJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "aplication/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		// спецом залогировал ошибку линтер ругается
-		log.Printf("SendJSON: failed to encode response: %v", err)
-	}
-}
-
 func SendError(w http.ResponseWriter, status int, err error) {
 	w.Header().Set("Content-Type", "aplication/json")
 	w.WriteHeader(status)
