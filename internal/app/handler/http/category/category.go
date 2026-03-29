@@ -25,10 +25,7 @@ func NewHandler(svcCategory service.Category) rhandler.Category {
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	// декодирование JSON
 	var req entity.RequestCategoryCreate
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
-		return
-	}
+
 	// валидация параметров
 	if err := binding.ScanAndValidateJSON(r, &req); err != nil {
 		httph.ErrorApply(w, http.StatusBadRequest, err.Error())

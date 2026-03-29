@@ -24,10 +24,6 @@ func NewHandler(svcProduct service.Product) rhandler.Product {
 
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req entity.RequestProductCreate
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
-		return
-	}
 
 	if err := binding.ScanAndValidateJSON(r, &req); err != nil {
 		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
