@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	ErrNotFound            = errors.New("not found")
-	ErrAlreadyExists       = errors.New("alrady exists")
+	ErrAlreadyExists       = errors.New("already exists")
 	ErrCategoryHasProducts = errors.New("category has linked products")
-	ErrIncorrectParametrs  = errors.New("incorrects parameters")
+	ErrIncorrectParameters = errors.New("incorrects parameters")
 )

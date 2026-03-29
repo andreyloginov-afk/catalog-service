@@ -17,25 +17,11 @@ type Category struct {
 	UpdatedAt time.Time `bun:"updated_at,default:current_timestamp"`
 }
 type RequestCategoryCreate struct {
-	Name string `json:"name"`
-}
-
-func (r RequestCategoryCreate) Validate() error {
-	if r.Name == "" {
-		return ErrIncorrectParametrs
-	}
-	return nil
+	Name string `json:"name" binding:"required,min=2,max=255"`
 }
 
 type RequestCategoryUpdate struct {
-	Name string `json:"name"`
-}
-
-func (r RequestCategoryUpdate) Validate() error {
-	if r.Name == "" {
-		return ErrIncorrectParametrs
-	}
-	return nil
+	Name string `json:"name" binding:"required,min=2,max=255"`
 }
 
 type ResponseCategory struct {
