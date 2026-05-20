@@ -3,11 +3,16 @@ package rprocessor
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config/section"
 	rhandler "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http"
+	"github.com/andreyloginov-afk/catalog-service/internal/app/util"
+	"github.com/andreyloginov-afk/catalog-service/internal/pkg/http/httph"
+	"github.com/andreyloginov-afk/catalog-service/internal/pkg/http/mzerolog"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -17,8 +22,21 @@ type httpProc struct {
 }
 
 func NewHttp(hHealth rhandler.Health, hCategory rhandler.Category, hProduct rhandler.Product, cfg section.ProcessorWebServer) *httpProc {
+
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(handlerNotFound)
+
+	debugLogger := zerolog.New(os.Stderr).Level(zerolog.DebugLevel).With().Timestamp().Logger()
+	debugLogger.Debug().Msg("Custom logger for mzerolog") // это сообщение вы должны увидеть
+
+	r.Use(
+		httph.NewErrorMiddlewear(),
+		mzerolog.NewMiddleware(
+			mzerolog.WithLogger(debugLogger),
+			mzerolog.WithSkipper(util.IsFilteredHttpRoute),
+		),
+	)
+
 	vGenericRegHealthCheck(r, hHealth)
 	// API v1
 	rV1 := r.PathPrefix("/v1").Subrouter()

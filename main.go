@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config"
 	hcategory "github.com/andreyloginov-afk/catalog-service/internal/app/handler/http/category"
@@ -20,7 +21,10 @@ func main() {
 	ctx := context.Background()
 
 	//конфиг
-	config.Load()
+	config.Load(config.LoadArgs{
+		Output:          os.Stdout,
+		EnableSimpleLog: true,
+	})
 	cfg := config.Root
 
 	// PostgreSQL
