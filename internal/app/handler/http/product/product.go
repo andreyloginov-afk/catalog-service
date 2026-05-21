@@ -26,7 +26,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req entity.RequestProductCreate
 
 	if err := binding.ScanAndValidateJSON(r, &req); err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 
@@ -34,11 +34,11 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrAlreadyExists):
-			httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+			httph.HandleError(w, r, err)
 		case errors.Is(err, entity.ErrNotFound):
-			httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+			httph.HandleError(w, r, err)
 		default:
-			httph.ErrorApply(w, http.StatusInternalServerError, err.Error())
+			httph.HandleError(w, r, err)
 		}
 		return
 	}
@@ -61,7 +61,7 @@ func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
 
 	guid, err := uuid.FromString(vars["guid"])
 	if err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 
@@ -69,9 +69,9 @@ func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrNotFound):
-			httph.ErrorApply(w, http.StatusNotFound, err.Error())
+			httph.HandleError(w, r, err)
 		default:
-			httph.ErrorApply(w, http.StatusInternalServerError, err.Error())
+			httph.HandleError(w, r, err)
 		}
 		return
 	}
@@ -94,18 +94,18 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	guid, err := uuid.FromString(vars["guid"])
 	if err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 
 	var req entity.RequestProductUpdate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 
 	if err := binding.ScanAndValidateJSON(r, &req); err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 
@@ -113,11 +113,11 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrNotFound):
-			httph.ErrorApply(w, http.StatusNotFound, err.Error())
+			httph.HandleError(w, r, err)
 		case errors.Is(err, entity.ErrAlreadyExists):
-			httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+			httph.HandleError(w, r, err)
 		default:
-			httph.ErrorApply(w, http.StatusInternalServerError, err.Error())
+			httph.HandleError(w, r, err)
 		}
 		return
 	}
@@ -128,7 +128,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	guid, err := uuid.FromString(vars["guid"])
 	if err != nil {
-		httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 
@@ -136,11 +136,11 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrNotFound):
-			httph.ErrorApply(w, http.StatusNotFound, err.Error())
+			httph.HandleError(w, r, err)
 		case errors.Is(err, entity.ErrCategoryHasProducts):
-			httph.ErrorApply(w, http.StatusBadRequest, err.Error())
+			httph.HandleError(w, r, err)
 		default:
-			httph.ErrorApply(w, http.StatusInternalServerError, err.Error())
+			httph.HandleError(w, r, err)
 		}
 		return
 	}
@@ -151,7 +151,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *handler) List(w http.ResponseWriter, r *http.Request) {
 	products, err := h.svcProduct.List(r.Context())
 	if err != nil {
-		httph.ErrorApply(w, http.StatusInternalServerError, err.Error())
+		httph.HandleError(w, r, err)
 		return
 	}
 

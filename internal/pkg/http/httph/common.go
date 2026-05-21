@@ -29,7 +29,9 @@ func SendEncodedWithMIME(w http.ResponseWriter, r *http.Request, statusCode int,
 	w.WriteHeader(statusCode)
 
 	if err := EncodeJSON(w, obj); err != nil {
-		ErrorApply(w, http.StatusInternalServerError, err.Error())
+
+		HandleError(w, r, err)
+		return
 	}
 }
 
