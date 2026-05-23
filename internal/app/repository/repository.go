@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/andreyloginov-afk/catalog-service/internal/app/entity"
 	"github.com/gofrs/uuid"
 )
