@@ -69,14 +69,12 @@ func NewConn(ctx context.Context, cfg section.RepositoryPostgres) (*Client, erro
 		cfg:      cfg,
 	}, nil
 }
-
-func (c *Client) Migrate(ctx context.Context) (oldVer, newVer, applied int64, err error) {
+func (c *Client) Migrate(ctx context.Context) (oldVer, newVer int64, err error) {
 	migrations := migrate.NewMigrations()
 	if err = migrations.Discover(migration.Postgres); err != nil {
-		return 0, 0, 0, fmt.Errorf("discover migrations: %w", err)
+		return 0, 0, fmt.Errorf("discover migrations: %w", err)
 	}
 
-	// тут migrator с опциями
 	migrator := migrate.NewMigrator(
 		c.rawBunDB,
 		migrations,
@@ -85,33 +83,27 @@ func (c *Client) Migrate(ctx context.Context) (oldVer, newVer, applied int64, er
 		migrate.WithMarkAppliedOnSuccess(true),
 	)
 
-	// инициализация
 	if err = migrator.Init(ctx); err != nil {
-		return 0, 0, 0, fmt.Errorf("migrator init: %w", err)
+		return 0, 0, fmt.Errorf("migrator init: %w", err)
 	}
 
-	// версия ДО
 	appliedMigrations, err := migrator.AppliedMigrations(ctx)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("get applied migrations: %w", err)
+		return 0, 0, fmt.Errorf("get applied migrations: %w", err)
 	}
 	oldVer = appliedMigrations.LastGroupID()
 
-	// применяем миграции
 	group, err := migrator.Migrate(ctx)
 	if err != nil {
-		return oldVer, oldVer, 0, fmt.Errorf("migrate: %w", err)
+		return oldVer, oldVer, fmt.Errorf("migrate: %w", err)
 	}
 
-	// если ничего не применилось
 	if group.IsZero() {
-		return oldVer, oldVer, 0, nil
+		return oldVer, oldVer, nil
 	}
 
 	newVer = group.ID
-	applied = int64(len(group.Migrations))
-
-	return oldVer, newVer, applied, nil
+	return oldVer, newVer, nil
 }
 
 func (c *Client) InsideTx(ctx context.Context, fn func(ctx context.Context) error) error {
