@@ -1,7 +1,6 @@
 package hcategory
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -87,10 +86,6 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req entity.RequestCategoryUpdate
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httph.HandleError(w, r, err)
-		return
-	}
 
 	//
 	if err := binding.ScanAndValidateJSON(r, &req); err != nil {

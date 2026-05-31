@@ -2,7 +2,6 @@ package sproduct
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/entity"
@@ -24,86 +23,91 @@ func NewService(repoProduct repository.Product, repoCategory repository.Category
 }
 
 func (s *svc) Create(ctx context.Context, req entity.RequestProductCreate) (entity.Product, error) {
-	existing, err := s.repoProduct.List(ctx, &req.Name, nil)
-	if err != nil {
-		return entity.Product{}, err
-	}
+	var product entity.Product
 
-	if len(existing) > 0 {
-		return entity.Product{}, entity.ErrAlreadyExists
-	}
+	err := s.repoProduct.InsideTx(ctx, func(txCtx context.Context) error {
 
-	_, err = s.repoCategory.GetByGUID(ctx, req.CategoryGuid)
-	if err != nil {
-		return entity.Product{}, err
-	}
+		existing, err := s.repoProduct.List(txCtx, &req.Name, nil)
+		if err != nil {
+			return err
+		}
+		if len(existing) > 0 {
+			return entity.ErrAlreadyExists
+		}
 
-	now := time.Now()
-	product := entity.Product{
-		GUID:         uuid.Must(uuid.NewV4()),
-		Name:         req.Name,
-		Description:  req.Description,
-		Price:        req.Price,
-		CategoryGuid: req.CategoryGuid,
-		CreatedAt:    now,
-		UpdatedAt:    now,
-	}
+		_, err = s.repoCategory.GetByGUID(txCtx, req.CategoryGuid)
+		if err != nil {
+			return err
+		}
 
-	err = s.repoProduct.Create(ctx, product)
+		now := time.Now()
+		product = entity.Product{
+			GUID:         uuid.Must(uuid.NewV4()),
+			Name:         req.Name,
+			Description:  req.Description,
+			Price:        req.Price,
+			CategoryGuid: req.CategoryGuid,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+
+		return s.repoProduct.Create(txCtx, product)
+	})
+
 	if err != nil {
 		return entity.Product{}, err
 	}
 	return product, nil
 }
-
 func (s *svc) GetByGUID(ctx context.Context, guid uuid.UUID) (entity.Product, error) {
 	return s.repoProduct.GetByGUID(ctx, guid)
 }
 
 func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestProductUpdate) (entity.Product, error) {
-	product, err := s.repoProduct.GetByGUID(ctx, guid)
+	var product entity.Product
+
+	err := s.repoProduct.InsideTx(ctx, func(txCtx context.Context) error {
+
+		var err error
+		product, err = s.repoProduct.GetByGUID(txCtx, guid)
+		if err != nil {
+			return err
+		}
+
+		existing, err := s.repoProduct.List(txCtx, &req.Name, nil)
+		if err != nil {
+			return err
+		}
+		for _, p := range existing {
+			if p.GUID != guid {
+				return entity.ErrAlreadyExists
+			}
+		}
+
+		product.Name = req.Name
+		product.Description = req.Description
+		product.Price = req.Price
+		product.CategoryGuid = req.CategoryGUID
+		product.UpdatedAt = time.Now()
+
+		return s.repoProduct.Update(txCtx, product)
+	})
+
 	if err != nil {
 		return entity.Product{}, err
 	}
-
-	existing, err := s.repoProduct.List(ctx, &req.Name, nil)
-	if err != nil {
-		return entity.Product{}, err
-	}
-
-	if len(existing) > 0 {
-		return entity.Product{}, entity.ErrAlreadyExists
-	}
-
-	product.Name = req.Name
-	product.Description = req.Description
-	product.Price = req.Price
-	product.CategoryGuid = req.CategoryGUID
-	product.UpdatedAt = time.Now()
-
-	if err := s.repoProduct.Update(ctx, product); err != nil {
-		return entity.Product{}, err
-	}
-
 	return product, nil
 }
 
 func (s *svc) Delete(ctx context.Context, guid uuid.UUID) error {
-	_, err := s.repoCategory.GetByGUID(ctx, guid)
-	if err != nil {
-		return err
-	}
+	return s.repoProduct.InsideTx(ctx, func(txCtx context.Context) error {
 
-	products, err := s.repoProduct.List(ctx, nil, &guid)
-	if err != nil {
-		return fmt.Errorf("failed to list products: %w", err)
-	}
-	if len(products) > 0 {
-		return entity.ErrCategoryHasProducts
-	}
+		if _, err := s.repoProduct.GetByGUID(txCtx, guid); err != nil {
+			return err
+		}
 
-	return s.repoProduct.Delete(ctx, guid)
-
+		return s.repoProduct.Delete(txCtx, guid)
+	})
 }
 
 func (s *svc) List(ctx context.Context) ([]entity.Product, error) {

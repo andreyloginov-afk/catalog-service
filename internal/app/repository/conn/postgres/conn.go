@@ -9,6 +9,7 @@ import (
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/config/section"
 	"github.com/andreyloginov-afk/catalog-service/migration"
+	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -63,7 +64,7 @@ func NewConn(ctx context.Context, cfg section.RepositoryPostgres) (*Client, erro
 	}
 
 	return &Client{
-		_bunDB:   bunDB,
+		_bunDB:   newTxInjector(bunDB),
 		rawBunDB: bunDB,
 		cfg:      cfg,
 	}, nil
@@ -111,4 +112,35 @@ func (c *Client) Migrate(ctx context.Context) (oldVer, newVer, applied int64, er
 	applied = int64(len(group.Migrations))
 
 	return oldVer, newVer, applied, nil
+}
+
+func (c *Client) InsideTx(ctx context.Context, fn func(ctx context.Context) error) error {
+	// Проверка вложенности
+	if tx := getTxFromContext(ctx); tx.Tx != nil {
+		return fn(ctx)
+	}
+
+	tx, err := c.rawBunDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	done := false
+	defer func() {
+		if !done {
+			_ = tx.Rollback()
+			log.Debug().Msg("InsideTx: rollback")
+		}
+	}()
+
+	ctxWithTx := setTxToContext(ctx, tx)
+	if err := fn(ctxWithTx); err != nil {
+		return err
+	}
+
+	done = true
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
 }
