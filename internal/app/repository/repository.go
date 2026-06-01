@@ -8,6 +8,10 @@ import (
 )
 
 type (
+	Migrate interface {
+		Migrate(ctx context.Context) (oldVer, newVer int64, err error)
+	}
+
 	Transactional interface {
 		InsideTx(ctx context.Context, fn func(ctx context.Context) error) error
 	}
