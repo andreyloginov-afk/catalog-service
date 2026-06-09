@@ -35,3 +35,8 @@ run: build
 .PHONY: clean
 clean:
 	rm -f ./bin/app
+
+
+.PHONY: generate-mocks
+generate-mocks: ## Сгенерировать моки (mockery)
+	go run github.com/vektra/mockery/v2@latest

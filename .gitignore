@@ -38,5 +38,6 @@ config.local.*  # локальные настройки проекта.env
 catalog-service
 bin/app
 .log
-
+coverage.html
+coverage.out
 
