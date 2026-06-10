@@ -58,7 +58,6 @@ linters:
     - maintidx
     - govet
     - gosec
-    - gomodguard_v2
     - gosmopolitan
     - interfacebloat
     - loggercheck
@@ -85,6 +84,34 @@ linters-settings:
   funlen:
     lines: 130
     statements: 60
+
+  misspell:
+    locale: US
+
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - $gomodname
+          - github.com
+        deny:
+          - pkg: "emperror.dev/errors"
+            desc: should be replaced by "github.com/pkg/errors"
+
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+
+  errorlint:
+    asserts: false
 
 issues:
   exclude-rules:
