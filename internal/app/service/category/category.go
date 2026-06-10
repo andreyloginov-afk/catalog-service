@@ -26,7 +26,6 @@ func (s *svc) Create(ctx context.Context, req entity.RequestCategoryCreate) (ent
 	var category entity.Category
 
 	err := s.repoCategory.InsideTx(ctx, func(txCtx context.Context) error {
-
 		existing, err := s.repoCategory.List(txCtx, &req.Name)
 		if err != nil {
 			return err
@@ -48,9 +47,7 @@ func (s *svc) Create(ctx context.Context, req entity.RequestCategoryCreate) (ent
 		}
 
 		return nil
-
 	})
-
 	if err != nil {
 		return entity.Category{}, err
 	}
@@ -66,7 +63,6 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestCate
 	var category entity.Category
 
 	err := s.repoCategory.InsideTx(ctx, func(txCtx context.Context) error {
-
 		var err error
 		category, err = s.repoCategory.GetByGUID(txCtx, guid)
 		if err != nil {
@@ -88,7 +84,6 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestCate
 
 		return s.repoCategory.Update(txCtx, category)
 	})
-
 	if err != nil {
 		return entity.Category{}, err
 	}
@@ -116,7 +111,6 @@ func (s *svc) Delete(ctx context.Context, guid uuid.UUID) error {
 	}
 
 	return nil
-
 }
 
 func (s *svc) List(ctx context.Context) ([]entity.Category, error) {

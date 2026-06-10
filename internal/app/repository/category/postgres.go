@@ -38,7 +38,6 @@ func (r *repoPg) GetByGUID(ctx context.Context, guid uuid.UUID) (entity.Category
 		Model(&category).
 		Where("guid = ?", guid).
 		Scan(ctx)
-
 	if err != nil {
 		return entity.Category{}, util.ReplaceErr1(err, sql.ErrNoRows, entity.ErrNotFound)
 	}
@@ -61,7 +60,6 @@ func (r *repoPg) Delete(ctx context.Context, guid uuid.UUID) error {
 		Model((*entity.Category)(nil)).
 		Where("guid = ?", guid).
 		Exec(ctx)
-
 	if err != nil {
 		return rcpostgres.DeleteErr(err)
 	}

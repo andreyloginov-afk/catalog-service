@@ -5,11 +5,13 @@ import (
 	"net/http"
 )
 
-type contextKeyError struct{}
-type contextValueError struct {
-	err        error
-	statusCode int
-}
+type (
+	contextKeyError   struct{}
+	contextValueError struct {
+		err        error
+		statusCode int
+	}
+)
 
 func errorPrepare(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextKeyError{}, &contextValueError{})
@@ -21,7 +23,6 @@ func errorApply(ctx context.Context, err error) {
 			v.err = err
 		}
 	}
-
 }
 
 func errorGet(ctx context.Context) error {
@@ -35,7 +36,7 @@ func errorGet(ctx context.Context) error {
 }
 
 func errorApplyStatusCode(ctx context.Context, statusCode int) {
-	//тут аналогично errorApply но для statusCode
+	// тут аналогично errorApply но для statusCode
 	if val := ctx.Value(contextKeyError{}); val != nil {
 		if v, ok := val.(*contextValueError); ok {
 			v.statusCode = statusCode
@@ -44,7 +45,7 @@ func errorApplyStatusCode(ctx context.Context, statusCode int) {
 }
 
 func errorGetStatusCode(ctx context.Context) int {
-	//Аналогично errorGet, но возвращаем statuscode или 0
+	// Аналогично errorGet, но возвращаем statuscode или 0
 	if val := ctx.Value(contextKeyError{}); val != nil {
 		if v, ok := val.(*contextValueError); ok {
 			return v.statusCode

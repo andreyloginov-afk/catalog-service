@@ -12,5 +12,4 @@ func IsFilteredHttpRoute(r *http.Request) bool {
 	return strings.Contains(uri, "health") ||
 		strings.Contains(uri, "debug") ||
 		strings.Contains(uri, "metric")
-
 }

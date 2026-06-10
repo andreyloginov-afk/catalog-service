@@ -13,7 +13,6 @@ type Option = func(m *middleware)
 func WithLogger(l zerolog.Logger) Option {
 	return func(m *middleware) {
 		m.log = l
-
 	}
 }
 
@@ -36,7 +35,6 @@ func NewMiddleware(opts ...Option) httph.Middlewear {
 	}
 
 	return m.Callback
-
 }
 
 func defaultSkipper(_ *http.Request) bool {

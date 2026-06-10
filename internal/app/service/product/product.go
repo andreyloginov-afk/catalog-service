@@ -26,7 +26,6 @@ func (s *svc) Create(ctx context.Context, req entity.RequestProductCreate) (enti
 	var product entity.Product
 
 	err := s.repoProduct.InsideTx(ctx, func(txCtx context.Context) error {
-
 		existing, err := s.repoProduct.List(txCtx, &req.Name, nil)
 		if err != nil {
 			return err
@@ -53,12 +52,12 @@ func (s *svc) Create(ctx context.Context, req entity.RequestProductCreate) (enti
 
 		return s.repoProduct.Create(txCtx, product)
 	})
-
 	if err != nil {
 		return entity.Product{}, err
 	}
 	return product, nil
 }
+
 func (s *svc) GetByGUID(ctx context.Context, guid uuid.UUID) (entity.Product, error) {
 	return s.repoProduct.GetByGUID(ctx, guid)
 }
@@ -67,7 +66,6 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestProd
 	var product entity.Product
 
 	err := s.repoProduct.InsideTx(ctx, func(txCtx context.Context) error {
-
 		var err error
 		product, err = s.repoProduct.GetByGUID(txCtx, guid)
 		if err != nil {
@@ -92,7 +90,6 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestProd
 
 		return s.repoProduct.Update(txCtx, product)
 	})
-
 	if err != nil {
 		return entity.Product{}, err
 	}
@@ -101,7 +98,6 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestProd
 
 func (s *svc) Delete(ctx context.Context, guid uuid.UUID) error {
 	return s.repoProduct.InsideTx(ctx, func(txCtx context.Context) error {
-
 		if _, err := s.repoProduct.GetByGUID(txCtx, guid); err != nil {
 			return err
 		}

@@ -19,5 +19,4 @@ func (d *Duration) UnmarshalText(text []byte) error {
 	d.Duration = duration
 
 	return nil
-
 }

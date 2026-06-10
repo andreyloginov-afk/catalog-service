@@ -42,7 +42,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//конвертация entity ResponsDTO
+	// конвертация entity ResponsDTO
 	resp := entity.ResponseCategory{
 		GUID:      category.GUID,
 		Name:      category.Name,
@@ -51,7 +51,6 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httph.SendEncoded(w, r, http.StatusCreated, resp)
-
 }
 
 func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +72,6 @@ func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 }
 
 func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +103,6 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 }
 
 func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +125,6 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-
 }
 
 func (h *handler) List(w http.ResponseWriter, r *http.Request) {
@@ -149,5 +145,4 @@ func (h *handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httph.SendEncoded(w, r, http.StatusOK, resp)
-
 }
