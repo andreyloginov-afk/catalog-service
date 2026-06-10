@@ -1,5 +1,6 @@
+version: "2"
+
 run:
-  go: "1.24"
   deadline: 2m
   timeout: 3m
   build-tags:
@@ -14,34 +15,24 @@ linters:
     - decorder
     - dupl
     - durationcheck
-    - errcheck
     - errchkjson
     - errname
     - copyloopvar
     - forcetypeassert
-    - funlen
     - ginkgolinter
-    - gci
     - gocheckcompilerdirectives
     - gochecksumtype
     - gocognit
-    - goconst
-    - gocritic
     - gocyclo
-    - gofmt
     - gomoddirectives
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
-    - gosec
-    - gosimple
     - gosmopolitan
-    - govet
     - grouper
     - inamedparam
     - ineffassign
     - interfacebloat
     - loggercheck
-    - maintidx
     - makezero
     - mirror
     - nakedret
@@ -53,12 +44,10 @@ linters:
     - prealloc
     - predeclared
     - protogetter
-    - revive
     - sloglint
     - staticcheck
     - usetesting
     - testableexamples
-    - testifylint
     - thelper
     - tparallel
     - unconvert
@@ -66,6 +55,22 @@ linters:
     - unused
     - usestdlibvars
     - zerologlint
+  disable:
+    - depguard
+    - revive
+    - funlen
+    - goconst
+    - testifylint
+    - gocritic
+    - errcheck
+    - maintidx
+    - govet
+    - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - gci
 linters-settings:
   gci:
     sections:

@@ -3,13 +3,13 @@ package sproduct
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/andreyloginov-afk/catalog-service/internal/app/entity"
+	"github.com/andreyloginov-afk/catalog-service/internal/app/repository/mocks"
 	"github.com/andreyloginov-afk/catalog-service/internal/pkg/testutil"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/mock"
-	"testing"
-
-	"github.com/andreyloginov-afk/catalog-service/internal/app/repository/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -353,6 +353,9 @@ func (s *updateProductSuite) TestUpdate() {
 
 	description := "desc"
 
+	listErr := errors.New("list error")
+	getErr := errors.New("get error")
+
 	tests := []struct {
 		name    string
 		args    args
@@ -504,9 +507,6 @@ func (s *updateProductSuite) TestUpdate() {
 					Return(nil)
 			},
 		},
-
-		// 🔥 ДОБИВАЕМ ПОКРЫТИЕ
-
 		{
 			name: "list error",
 			args: args{
@@ -515,7 +515,7 @@ func (s *updateProductSuite) TestUpdate() {
 					Name: "ErrList",
 				},
 			},
-			want: want{err: errors.New("list error")},
+			want: want{err: listErr},
 			prepare: func(args args) {
 				s.productRepo.EXPECT().
 					InsideTx(s.ctx, mock.Anything).
@@ -529,7 +529,7 @@ func (s *updateProductSuite) TestUpdate() {
 
 				s.productRepo.EXPECT().
 					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
-					Return(nil, errors.New("list error"))
+					Return(nil, listErr)
 			},
 		},
 		{
@@ -540,7 +540,7 @@ func (s *updateProductSuite) TestUpdate() {
 					Name: "ErrGet",
 				},
 			},
-			want: want{err: errors.New("get error")},
+			want: want{err: getErr},
 			prepare: func(args args) {
 				s.productRepo.EXPECT().
 					InsideTx(s.ctx, mock.Anything).
@@ -550,7 +550,7 @@ func (s *updateProductSuite) TestUpdate() {
 
 				s.productRepo.EXPECT().
 					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{}, errors.New("get error"))
+					Return(entity.Product{}, getErr)
 			},
 		},
 		{
