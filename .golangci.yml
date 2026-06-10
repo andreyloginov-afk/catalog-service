@@ -32,11 +32,9 @@ linters:
     - nilerr
     - noctx
     - nolintlint
-    - perfsprint
     - prealloc
     - predeclared
     - protogetter
-    - sloglint
     - staticcheck
     - usetesting
     - testableexamples
@@ -63,6 +61,8 @@ linters:
     - loggercheck
     - mirror
     - zerologlint
+    - sloglint
+    - perfsprint
 
 linters-settings:
   gci:
