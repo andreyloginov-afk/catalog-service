@@ -60,5 +60,4 @@ func createLogger(level zerolog.Level, output io.Writer) zerolog.Logger {
 		With().
 		Timestamp().
 		Logger()
-
 }

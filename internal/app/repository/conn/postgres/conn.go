@@ -59,7 +59,7 @@ func NewConn(ctx context.Context, cfg section.RepositoryPostgres) (*Client, erro
 	defer cancel()
 
 	if err := sqldb.PingContext(pingCtx); err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
@@ -69,6 +69,7 @@ func NewConn(ctx context.Context, cfg section.RepositoryPostgres) (*Client, erro
 		cfg:      cfg,
 	}, nil
 }
+
 func (c *Client) Migrate(ctx context.Context) (oldVer, newVer int64, err error) {
 	migrations := migrate.NewMigrations()
 	if err = migrations.Discover(migration.Postgres); err != nil {

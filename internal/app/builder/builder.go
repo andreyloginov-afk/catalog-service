@@ -53,21 +53,20 @@ type Builder struct {
 
 func NewBuilder(cCtx *cli.Context) *Builder {
 	b := Builder{
-
 		cCtx:     cCtx,
 		chErrors: make(chan error, 4096),
 	}
 	// отменяемый контекст
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	b.ctx = ctx
-	//канал сигналов
+	// канал сигналов
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	//Запускаем горутину
+	// Запускаем горутину
 	go b.waitForSignal(sig, cancelFunc)
 
-	//горутина вывода ошибок
+	// горутина вывода ошибок
 	go b.printErrors()
 
 	b.healthHandler = rhealth.NewHandler()
@@ -91,6 +90,7 @@ func (b *Builder) BuildConfig() {
 		b.buildConfig()
 	})
 }
+
 func (b *Builder) Run() {
 	if b.ctx.Err() != nil {
 		log.Info().Msg("Shutdown during initialization")
@@ -122,7 +122,6 @@ func (b *Builder) BuildRepoConnPostgres() {
 		}
 		b.connPostgres = client
 	})
-
 }
 
 func (b *Builder) BuildRepoConnMigrator() {
@@ -140,7 +139,6 @@ func (b *Builder) BuildRepoCategory() {
 	b.exec(true, func(b *Builder) {
 		b.categoryRepo = pcategory.NewRepoFromPostgres(b.connPostgres)
 	}, b.connPostgres)
-
 }
 
 func (b *Builder) BuildRepoProduct() {
@@ -156,7 +154,6 @@ func (b *Builder) BuildRepoProduct() {
 func (b *Builder) BuildServiceCategory() {
 	b.exec(true, func(b *Builder) {
 		b.categoryService = scategory.NewService(b.categoryRepo, b.productRepo)
-
 	}, b.categoryRepo, b.productRepo)
 }
 
@@ -173,7 +170,6 @@ func (b *Builder) BuildServiceProduct() {
 func (b *Builder) BuildHandlerHttpCategory() {
 	b.exec(true, func(b *Builder) {
 		b.categoryHandler = hcategory.NewHandler(b.categoryService)
-
 	}, b.categoryService)
 }
 
@@ -230,5 +226,4 @@ func (b *Builder) buildConfig() {
 	}
 	config.Load(args)
 	b.cfg = config.Root
-
 }

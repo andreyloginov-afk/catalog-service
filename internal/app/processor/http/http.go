@@ -36,7 +36,6 @@ func (gs gracefulServer) Close() error {
 }
 
 func NewHttp(hHealth rhandler.Health, hCategory rhandler.Category, hProduct rhandler.Product, cfg section.ProcessorWebServer) processor.Processor {
-
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(handlerNotFound)
 
@@ -96,8 +95,8 @@ func (p *httpProc) Serve() error {
 
 	return p.server.ListenAndServe()
 }
-func (p *httpProc) StartAsync(ctx context.Context, wg *sync.WaitGroup) {
 
+func (p *httpProc) StartAsync(ctx context.Context, wg *sync.WaitGroup) {
 	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp", p.addr)
 	if err != nil {
 		log.Fatal().Err(err).Msg("server cannot start without listener")

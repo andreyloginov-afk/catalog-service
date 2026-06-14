@@ -1,136 +1,115 @@
+version: "2"
+
+output:
+  formats:
+    tab:
+      path: stdout
+      colors: true
+
 run:
-  go: "1.24"
-  deadline: 2m
-  timeout: 3m
+  go: "1.25"
+  timeout: 10m
   build-tags:
     - mock
     - integration
+
 linters:
+  default: none
   enable:
-    - asasalint
-    - asciicheck
-    - bidichk
-    - bodyclose
-    - decorder
-    - dupl
-    - durationcheck
     - errcheck
-    - errchkjson
-    - errname
-    - copyloopvar
-    - forcetypeassert
-    - funlen
-    - ginkgolinter
-    - gci
-    - gocheckcompilerdirectives
-    - gochecksumtype
-    - gocognit
-    - goconst
-    - gocritic
-    - gocyclo
-    - gofmt
-    - gomoddirectives
-    - gomodguard
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - gosmopolitan
     - govet
-    - grouper
-    - inamedparam
     - ineffassign
-    - interfacebloat
-    - loggercheck
-    - maintidx
-    - makezero
-    - mirror
+    - staticcheck
+    - unused
+    - nolintlint
+    - revive
+    - gocritic
+    - bodyclose
+    - dupl
+    - errname
+    - goconst
+    - gocyclo
+    - gosec
     - nakedret
     - nestif
-    - nilerr
-    - noctx
-    - nolintlint
-    - perfsprint
     - prealloc
-    - predeclared
-    - protogetter
-    - revive
-    - sloglint
-    - staticcheck
-    - usetesting
-    - testableexamples
-    - testifylint
-    - thelper
-    - tparallel
     - unconvert
     - unparam
-    - unused
     - usestdlibvars
-    - zerologlint
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - blank
-      - dot
-    skip-generated: true
-    custom-order: true
-  gocritic:
-    disabled-checks:
-      - commentFormatting
-      - exitAfterDefer
-  gocyclo:
-    min-complexity: 15
-  nestif:
-    min-complexity: 10
-  dupl:
-    threshold: 160
-  funlen:
-    lines: 130
-    statements: 60
-  revive:
+    - errorlint
+    - misspell
+  settings:
+    govet:
+      enable:
+        - nilness
+        - reflectvaluecompare
+        - sortslice
+        - unusedwrite
+    gocritic:
+      enable-all: true
+      disabled-checks:
+        - appendCombine
+        - badRegexp
+        - deprecatedComment
+        - docStub
+        - importShadow
+        - sloppyLen
+        - typeAssertChain
+        - emptyFallthrough
+        - unnamedResult
+        - singleCaseSwitch
+        - sloppyReassign
+        - truncateCmp
+        - unnecessaryBlock
+        - whyNoLint
+        - commentFormatting
+      settings:
+        hugeParam:
+          sizeThreshold: 256
+        rangeValCopy:
+          sizeThreshold: 1024
+    revive:
+      rules:
+        - name: unexported-return
+          disabled: true
+        - name: unused-parameter
+          disabled: true
+        - name: empty-block
+          severity: warning
+          disabled: true
+    misspell: {}
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+  exclusions:
+    generated: lax
+    paths:
+      - "init.go"
+      - ".*_test.go"
+      - ".*_mock.go"
+      - "vendor"
     rules:
-      - name: unexported-return
-        disabled: true
-  misspell:
-    locale: US
-  depguard:
-    rules:
-      main:
-        allow:
-          - $gostd
-          - $gomodname
-          - github.com
-        deny:
-          - pkg: "emperror.dev/errors"
-            desc: should be replaced by "github.com/pkg/errors"
-  wrapcheck:
-    ignoreSigs:
-      - .Errorf(
-      - errors.New(
-      - errors.Unwrap(
-      - .Wrap(
-      - .Wrapf(
-      - .WithMessage(
-      - .WithMessagef(
-      - .WithStack(
-  interfacebloat:
-    max: 15
-  errorlint:
-    asserts: false
+      - text: 'hugeParam: (.*?) is heavy \(\d+ bytes\); consider passing it by pointer'
+        path: '(.*)(build|cmd|command|cfg|conf|config)(.*)\\.go'
+      - linters: [ gosec ]
+        text: 'G104: Errors unhandled'
+        path: '_test\\.go'
+
+formatters:
+  enable:
+    - gofumpt
+    - gofmt
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/MoM-Repo/mom-boilerplate)
+        - blank
+        - dot
+      custom-order: true
+
 issues:
-  exclude-rules:
-    - path: "cmd" # drop this after migration to 1.54
-      linters:
-        - nolintlint
-    - path: ".*_test\\.go$"
-      linters:
-        - funlen
-        - goconst
-        - gocyclo
-  exclude-files:
-    - "init.go"
-    - "_mock.go"
-    - ".*_test.go$"
-  exclude-dirs:
-    - "semgrep-rules"
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -61,5 +61,4 @@ func Wrap(ctx context.Context, wg *sync.WaitGroup, cb func(context.Context)) {
 		}
 		cb(ctx)
 	}()
-
 }

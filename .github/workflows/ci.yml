@@ -2,68 +2,79 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
-  build-and-test:
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    env:
-      CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.24.1'
+          go-version: "1.25"
           cache-dependency-path: go.sum
 
+      - name: Download dependencies
+        run: go mod download
+
       - name: Build
-        run: go build -o ./bin/ -v ./...
+        run: |
+          mkdir -p ./bin
+          go build -o ./bin/ -v ./...
 
-      - name: Test
-        run: make test
-
-  linter:
-    name: lint
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.24.1'
-          cache: false
+          go-version: "1.25"
+          cache-dependency-path: go.sum
+
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: go.sum
+
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
-          # Require: The version of golangci-lint to use.
-          # When install-mode is binary (default) the value can be v1.2 or v1.2.3 or latest to use the latest version.
-          # When install-mode is goinstall the value can be v1.2.3, latest, or the hash of a commit.
-          version: v1.64.8
+          version: v2.7.2
+          args: --timeout=10m --config=./.golangci.yml
 
-          # Optional: working directory, useful for monorepos
-          # working-directory: somedir
+  mod-check:
+    name: Go Mod Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-          # Optional: golangci-lint command line arguments.
-          #
-          # Note: By default, the .golangci.yml file should be at the root of the repository.
-          # The location of the configuration file can be changed by using --config=
-          args: --timeout=30m --config=./.golangci.yml
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: go.sum
 
-          # Optional: show only new issues if it's a pull request. The default value is false.
-          # only-new-issues: true
-
-          # Optional: if set to true, then all caching functionality will be completely disabled,
-          #           takes precedence over all other caching options.
-          # skip-cache: true
-
-          # Optional: if set to true, then the action won't cache or restore ~/go/pkg.
-          # skip-pkg-cache: true
-
-          # Optional: if set to true, then the action won't cache or restore ~/.cache/go-build.
-          # skip-build-cache: true
-
-          # Optional: The mode to install golangci-lint. It can be 'binary' or 'goinstall'.
-          # install-mode: "goinstall"
+      - name: Check go.mod/go.sum
+        run: |
+          go mod tidy
+          FILES="go.mod"
+          [ -f go.sum ] && FILES="$FILES go.sum"
+          git diff --exit-code $FILES || (echo "go.mod/go.sum не синхронизированы. Запустите 'go mod tidy'" && exit 1)
