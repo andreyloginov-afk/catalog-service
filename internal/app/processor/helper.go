@@ -2,7 +2,9 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"io"
+	"net"
 	"sync"
 	"time"
 
@@ -34,14 +36,14 @@ func WatchForShutdown(ctx context.Context, wg *sync.WaitGroup, closer io.Closer)
 	go func() {
 		defer wg.Done()
 		<-ctx.Done()
-		if err := closer.Close(); err != nil {
+		if err := closer.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 			log.Error().Err(err).Msg("Failed to close resource during shutdown")
 		}
 	}()
 }
 
 func Wrap(ctx context.Context, wg *sync.WaitGroup, cb func(context.Context)) {
-	if cb != nil {
+	if cb == nil {
 		return
 	}
 	if wg != nil {

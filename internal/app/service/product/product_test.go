@@ -787,3 +787,96 @@ func (s *updateProductSuite) TestNewService() {
 	svc := NewService(s.productRepo, s.categoryRepo)
 	s.NotNil(svc)
 }
+
+type getByGUIDsProductSuite struct {
+	suite.Suite
+
+	svc          *svc
+	productRepo  *mocks.MockProduct
+	categoryRepo *mocks.MockCategory
+	ctx          context.Context
+}
+
+func (s *getByGUIDsProductSuite) SetupTest() {
+	s.ctx = context.Background()
+	s.productRepo = mocks.NewMockProduct(s.T())
+	s.categoryRepo = mocks.NewMockCategory(s.T())
+	s.svc = &svc{
+		repoProduct:  s.productRepo,
+		repoCategory: s.categoryRepo,
+	}
+}
+
+func TestGetByGUIDsProductSuite(t *testing.T) {
+	suite.Run(t, new(getByGUIDsProductSuite))
+}
+
+func (s *getByGUIDsProductSuite) TestGetByGUIDs() {
+	guid1 := uuid.Must(uuid.NewV4())
+	guid2 := uuid.Must(uuid.NewV4())
+	guid3 := uuid.Must(uuid.NewV4())
+	dbErr := errors.New("db error")
+
+	testCases := []struct {
+		name    string
+		guids   []uuid.UUID
+		wantLen int
+		wantErr error
+		prepare func()
+	}{
+		{
+			name:    "all found",
+			guids:   []uuid.UUID{guid1, guid2},
+			wantLen: 2,
+			prepare: func() {
+				s.productRepo.EXPECT().
+					GetByGUID(s.ctx, guid1).
+					Return(entity.Product{GUID: guid1}, nil).Once()
+				s.productRepo.EXPECT().
+					GetByGUID(s.ctx, guid2).
+					Return(entity.Product{GUID: guid2}, nil).Once()
+			},
+		},
+		{
+			name:    "some missing",
+			guids:   []uuid.UUID{guid1, guid2, guid3},
+			wantLen: 2,
+			prepare: func() {
+				s.productRepo.EXPECT().
+					GetByGUID(s.ctx, guid1).
+					Return(entity.Product{GUID: guid1}, nil).Once()
+				s.productRepo.EXPECT().
+					GetByGUID(s.ctx, guid2).
+					Return(entity.Product{}, entity.ErrNotFound).Once()
+				s.productRepo.EXPECT().
+					GetByGUID(s.ctx, guid3).
+					Return(entity.Product{GUID: guid3}, nil).Once()
+			},
+		},
+		{
+			name:    "db error",
+			guids:   []uuid.UUID{guid1},
+			wantErr: dbErr,
+			prepare: func() {
+				s.productRepo.EXPECT().
+					GetByGUID(s.ctx, guid1).
+					Return(entity.Product{}, dbErr).Once()
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			tc.prepare()
+
+			result, err := s.svc.GetByGUIDs(s.ctx, tc.guids)
+
+			if tc.wantErr != nil {
+				s.ErrorIs(err, tc.wantErr)
+			} else {
+				s.NoError(err)
+				s.Len(result, tc.wantLen)
+			}
+		})
+	}
+}

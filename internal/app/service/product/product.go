@@ -2,6 +2,7 @@ package sproduct
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/andreyloginov-afk/catalog-service/internal/app/entity"
@@ -60,6 +61,21 @@ func (s *svc) Create(ctx context.Context, req entity.RequestProductCreate) (enti
 
 func (s *svc) GetByGUID(ctx context.Context, guid uuid.UUID) (entity.Product, error) {
 	return s.repoProduct.GetByGUID(ctx, guid)
+}
+
+func (s *svc) GetByGUIDs(ctx context.Context, guids []uuid.UUID) ([]entity.Product, error) {
+	products := make([]entity.Product, 0, len(guids))
+	for _, guid := range guids {
+		p, err := s.repoProduct.GetByGUID(ctx, guid)
+		if errors.Is(err, entity.ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, p)
+	}
+	return products, nil
 }
 
 func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestProductUpdate) (entity.Product, error) {
