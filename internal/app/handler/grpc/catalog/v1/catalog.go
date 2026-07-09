@@ -26,12 +26,15 @@ func (h *handler) GetProduct(ctx context.Context, req *catalogv1.GetProductReque
 	if err != nil {
 		return nil, mapper.ErrorToGRPC(entity.ErrIncorrectParameters)
 	}
-	product, err := h.srv.GetByGUID(ctx, guid)
+	products, err := h.srv.GetByGUIDs(ctx, []uuid.UUID{guid})
 	if err != nil {
 		return nil, mapper.ErrorToGRPC(err)
 	}
+	if len(products) == 0 {
+		return nil, mapper.ErrorToGRPC(entity.ErrNotFound)
+	}
 	return &catalogv1.GetProductResponse{
-		Product: mcatv1.ProductToProto(product),
+		Product: mcatv1.ProductToProto(products[0]),
 	}, nil
 }
 

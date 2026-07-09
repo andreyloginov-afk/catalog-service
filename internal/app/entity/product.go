@@ -38,6 +38,13 @@ type RequestProductUpdate struct {
 	UpdatedAT    time.Time `json:"updated_at"`
 }
 
+type RequestProductList struct {
+	Name         *string    `json:"name"`
+	CategoryGUID *uuid.UUID `json:"category_guid"`
+	MinPrice     *int64     `json:"min_price"`
+	MaxPrice     *int64     `json:"max_price"`
+}
+
 type ResponseProduct struct {
 	GUID         uuid.UUID `json:"guid"`
 	Name         string    `json:"name"`

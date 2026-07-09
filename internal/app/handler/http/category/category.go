@@ -62,7 +62,7 @@ func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// вызывает сервис
-	_, err = h.svcCategory.GetByGUID(r.Context(), guid)
+	_, err = h.svcCategory.GetByGUIDs(r.Context(), []uuid.UUID{guid})
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrAlreadyExists):

@@ -65,16 +65,16 @@ func (h *handler) GetByGUID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := h.svcProduct.GetByGUID(r.Context(), guid)
+	products, err := h.svcProduct.GetByGUIDs(r.Context(), []uuid.UUID{guid})
 	if err != nil {
-		switch {
-		case errors.Is(err, entity.ErrNotFound):
-			httph.HandleError(w, r, err)
-		default:
-			httph.HandleError(w, r, err)
-		}
+		httph.HandleError(w, r, err)
 		return
 	}
+	if len(products) == 0 {
+		httph.HandleError(w, r, entity.ErrNotFound)
+		return
+	}
+	product := products[0]
 
 	resp := entity.ResponseProduct{
 		GUID:         product.GUID,
@@ -149,7 +149,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) List(w http.ResponseWriter, r *http.Request) {
-	products, err := h.svcProduct.List(r.Context())
+	products, err := h.svcProduct.List(r.Context(), entity.RequestProductList{})
 	if err != nil {
 		httph.HandleError(w, r, err)
 		return
