@@ -34,13 +34,14 @@ message GetProductResponse {
   Product product = 1;
 }
 
-  message GetProductsRequest {
-    repeated string guids = 1;
-  }
-  message GetProductsResponse {
-    repeated Product products = 1;
-    repeated string missing_guids = 2;
-  }
+message GetProductsRequest {
+  repeated string guids = 1;
+}
+
+message GetProductsResponse {
+  repeated Product products = 1;
+  repeated string missing_guids = 2;
+}
 
 
 
