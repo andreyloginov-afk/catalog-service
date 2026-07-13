@@ -10,7 +10,7 @@ import (
 
 type httpCoder interface {
 	HTTPStatus() int
-	Error() string
+	error
 }
 
 func SendError(w http.ResponseWriter, status int, err error) {

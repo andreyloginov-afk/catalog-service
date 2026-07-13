@@ -42,11 +42,7 @@ func (s *svc) Create(ctx context.Context, req entity.RequestCategoryCreate) (ent
 			UpdatedAt: now,
 		}
 
-		if err := s.repoCategory.Create(txCtx, category); err != nil {
-			return err
-		}
-
-		return nil
+		return s.repoCategory.Create(txCtx, category)
 	})
 	if err != nil {
 		return entity.Category{}, err
@@ -54,20 +50,22 @@ func (s *svc) Create(ctx context.Context, req entity.RequestCategoryCreate) (ent
 	return category, nil
 }
 
-func (s *svc) GetByGUID(ctx context.Context, guid uuid.UUID) (entity.Category, error) {
-	return s.repoCategory.GetByGUID(ctx, guid)
-	// репозиторий уже возвращает ErrNotFound
+func (s *svc) GetByGUIDs(ctx context.Context, guids []uuid.UUID) ([]entity.Category, error) {
+	return s.repoCategory.GetByGUIDs(ctx, guids)
 }
 
 func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestCategoryUpdate) (entity.Category, error) {
 	var category entity.Category
 
 	err := s.repoCategory.InsideTx(ctx, func(txCtx context.Context) error {
-		var err error
-		category, err = s.repoCategory.GetByGUID(txCtx, guid)
+		categories, err := s.repoCategory.GetByGUIDs(txCtx, []uuid.UUID{guid})
 		if err != nil {
 			return err
 		}
+		if len(categories) == 0 {
+			return entity.ErrNotFound
+		}
+		category = categories[0]
 
 		existing, err := s.repoCategory.List(txCtx, &req.Name)
 		if err != nil {
@@ -91,12 +89,16 @@ func (s *svc) Update(ctx context.Context, guid uuid.UUID, req entity.RequestCate
 }
 
 func (s *svc) Delete(ctx context.Context, guid uuid.UUID) error {
-	err := s.repoCategory.InsideTx(ctx, func(ctx context.Context) error {
-		if _, err := s.repoCategory.GetByGUID(ctx, guid); err != nil {
+	err := s.repoCategory.InsideTx(ctx, func(txCtx context.Context) error {
+		categories, err := s.repoCategory.GetByGUIDs(txCtx, []uuid.UUID{guid})
+		if err != nil {
 			return err
 		}
+		if len(categories) == 0 {
+			return entity.ErrNotFound
+		}
 
-		products, err := s.repoProduct.List(ctx, nil, &guid)
+		products, err := s.repoProduct.List(txCtx, nil, &guid, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -104,13 +106,9 @@ func (s *svc) Delete(ctx context.Context, guid uuid.UUID) error {
 			return entity.ErrCategoryHasProducts
 		}
 
-		return s.repoCategory.Delete(ctx, guid)
+		return s.repoCategory.Delete(txCtx, guid)
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (s *svc) List(ctx context.Context) ([]entity.Category, error) {

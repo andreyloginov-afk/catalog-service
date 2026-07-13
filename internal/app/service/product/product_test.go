@@ -76,11 +76,10 @@ func (s *createProductSuite) SetupTest() {
 		repoProduct:  s.productRepo,
 		repoCategory: s.categoryRepo,
 	}
-
 }
+
 func TestListProductSuit(t *testing.T) {
 	suite.Run(t, new(listProductSuite))
-
 }
 
 func TestCreateProductSuit(t *testing.T) {
@@ -115,8 +114,6 @@ func (s *createProductSuite) TestCreate() {
 			},
 			want: want{err: nil},
 			prepare: func(args args) {
-				var nilUUID *uuid.UUID
-
 				s.productRepo.EXPECT().
 					InsideTx(s.ctx, mock.Anything).
 					RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
@@ -125,13 +122,13 @@ func (s *createProductSuite) TestCreate() {
 					Once()
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), nilUUID).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{}, nil).
 					Once()
 
 				s.categoryRepo.EXPECT().
-					GetByGUID(mock.Anything, args.req.CategoryGuid).
-					Return(entity.Category{}, nil).
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.req.CategoryGuid}).
+					Return([]entity.Category{{GUID: args.req.CategoryGuid}}, nil).
 					Once()
 
 				s.productRepo.EXPECT().
@@ -151,8 +148,6 @@ func (s *createProductSuite) TestCreate() {
 			},
 			want: want{err: entity.ErrAlreadyExists},
 			prepare: func(args args) {
-				var nilUUID *uuid.UUID
-
 				s.productRepo.EXPECT().
 					InsideTx(s.ctx, mock.Anything).
 					RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
@@ -161,7 +156,7 @@ func (s *createProductSuite) TestCreate() {
 					Once()
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), nilUUID).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{{Name: args.req.Name}}, nil).
 					Once()
 			},
@@ -177,8 +172,6 @@ func (s *createProductSuite) TestCreate() {
 			},
 			want: want{err: entity.ErrNotFound},
 			prepare: func(args args) {
-				var nilUUID *uuid.UUID
-
 				s.productRepo.EXPECT().
 					InsideTx(s.ctx, mock.Anything).
 					RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
@@ -187,13 +180,13 @@ func (s *createProductSuite) TestCreate() {
 					Once()
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), nilUUID).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{}, nil).
 					Once()
 
 				s.categoryRepo.EXPECT().
-					GetByGUID(mock.Anything, args.req.CategoryGuid).
-					Return(entity.Category{}, entity.ErrNotFound).
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.req.CategoryGuid}).
+					Return([]entity.Category{}, nil).
 					Once()
 			},
 		},
@@ -208,8 +201,6 @@ func (s *createProductSuite) TestCreate() {
 			},
 			want: want{err: errors.New("list failed")},
 			prepare: func(args args) {
-				var nilUUID *uuid.UUID
-
 				s.productRepo.EXPECT().
 					InsideTx(s.ctx, mock.Anything).
 					RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
@@ -218,7 +209,7 @@ func (s *createProductSuite) TestCreate() {
 					Once()
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), nilUUID).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return(nil, errors.New("list failed")).
 					Once()
 			},
@@ -264,44 +255,37 @@ func (s *getByGUIDProductSuite) TestGetByGUID() {
 	type args struct {
 		guid uuid.UUID
 	}
-	type want struct {
-		err error
-	}
 
 	productGUID := uuid.Must(uuid.NewV4())
 
 	testCases := []struct {
 		name    string
 		args    args
-		want    want
+		wantLen int
 		prepare func(args args)
 	}{
 		{
-			name: "success",
-			args: args{
-				guid: productGUID,
-			},
-			want: want{err: nil},
+			name:    "success",
+			args:    args{guid: productGUID},
+			wantLen: 1,
 			prepare: func(args args) {
 				s.productRepo.EXPECT().
-					GetByGUID(s.ctx, args.guid).
-					Return(entity.Product{
+					GetByGUIDs(s.ctx, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{
 						GUID: args.guid,
 						Name: "Test Product",
-					}, nil).
+					}}, nil).
 					Once()
 			},
 		},
 		{
-			name: "not found",
-			args: args{
-				guid: productGUID,
-			},
-			want: want{err: entity.ErrNotFound},
+			name:    "not found",
+			args:    args{guid: productGUID},
+			wantLen: 0,
 			prepare: func(args args) {
 				s.productRepo.EXPECT().
-					GetByGUID(s.ctx, args.guid).
-					Return(entity.Product{}, entity.ErrNotFound).
+					GetByGUIDs(s.ctx, []uuid.UUID{args.guid}).
+					Return([]entity.Product{}, nil).
 					Once()
 			},
 		},
@@ -311,14 +295,12 @@ func (s *getByGUIDProductSuite) TestGetByGUID() {
 		s.Run(tc.name, func() {
 			tc.prepare(tc.args)
 
-			result, err := s.svc.GetByGUID(s.ctx, tc.args.guid)
+			results, err := s.svc.GetByGUIDs(s.ctx, []uuid.UUID{tc.args.guid})
 
-			if tc.want.err != nil {
-				s.ErrorIs(err, tc.want.err)
-				s.Empty(result.GUID)
-			} else {
-				s.NoError(err)
-				s.Equal(tc.args.guid, result.GUID)
+			s.NoError(err)
+			s.Len(results, tc.wantLen)
+			if tc.wantLen > 0 {
+				s.Equal(tc.args.guid, results[0].GUID)
 			}
 		})
 	}
@@ -382,11 +364,11 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{GUID: args.guid}, nil)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{GUID: args.guid}}, nil)
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{}, nil)
 
 				s.productRepo.EXPECT().
@@ -412,11 +394,11 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{GUID: args.guid}, nil)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{GUID: args.guid}}, nil)
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{}, nil)
 
 				s.productRepo.EXPECT().
@@ -443,8 +425,8 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{}, entity.ErrNotFound)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{}, nil)
 			},
 		},
 		{
@@ -466,11 +448,11 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{GUID: args.guid}, nil)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{GUID: args.guid}}, nil)
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{
 						{GUID: uuid.Must(uuid.NewV4())},
 					}, nil)
@@ -495,11 +477,11 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{GUID: args.guid}, nil)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{GUID: args.guid}}, nil)
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{}, nil)
 
 				s.productRepo.EXPECT().
@@ -524,11 +506,11 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{GUID: args.guid}, nil)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{GUID: args.guid}}, nil)
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return(nil, listErr)
 			},
 		},
@@ -549,8 +531,8 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{}, getErr)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return(nil, getErr)
 			},
 		},
 		{
@@ -570,11 +552,11 @@ func (s *updateProductSuite) TestUpdate() {
 					})
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, args.guid).
-					Return(entity.Product{GUID: args.guid}, nil)
+					GetByGUIDs(mock.Anything, []uuid.UUID{args.guid}).
+					Return([]entity.Product{{GUID: args.guid}}, nil)
 
 				s.productRepo.EXPECT().
-					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil)).
+					List(mock.Anything, mock.AnythingOfType("*string"), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 					Return([]entity.Product{
 						{GUID: args.guid},
 					}, nil)
@@ -588,7 +570,6 @@ func (s *updateProductSuite) TestUpdate() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-
 			s.productRepo.ExpectedCalls = nil
 			s.productRepo.Calls = nil
 			s.categoryRepo.ExpectedCalls = nil
@@ -643,8 +624,8 @@ func (s *deleteProductSuite) TestDelete() {
 					Once()
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, testGUID).
-					Return(entity.Product{GUID: testGUID}, nil).
+					GetByGUIDs(mock.Anything, []uuid.UUID{testGUID}).
+					Return([]entity.Product{{GUID: testGUID}}, nil).
 					Once()
 
 				s.productRepo.EXPECT().
@@ -666,8 +647,8 @@ func (s *deleteProductSuite) TestDelete() {
 					Once()
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, testGUID).
-					Return(entity.Product{}, entity.ErrNotFound).
+					GetByGUIDs(mock.Anything, []uuid.UUID{testGUID}).
+					Return([]entity.Product{}, nil).
 					Once()
 			},
 		},
@@ -684,8 +665,8 @@ func (s *deleteProductSuite) TestDelete() {
 					Once()
 
 				s.productRepo.EXPECT().
-					GetByGUID(mock.Anything, testGUID).
-					Return(entity.Product{GUID: testGUID}, nil).
+					GetByGUIDs(mock.Anything, []uuid.UUID{testGUID}).
+					Return([]entity.Product{{GUID: testGUID}}, nil).
 					Once()
 
 				s.productRepo.EXPECT().
@@ -706,7 +687,6 @@ func (s *deleteProductSuite) TestDelete() {
 			err := s.svc.Delete(s.ctx, tc.guid)
 
 			if tc.wantErr != nil {
-
 				s.ErrorContains(err, tc.wantErr.Error())
 			} else {
 				s.NoError(err)
@@ -741,10 +721,8 @@ func (s *listProductSuite) TestList() {
 			wantErr: nil,
 			check: func(res []entity.Product) {
 				s.Len(res, 2)
-
 				s.Equal("iPhone", res[0].Name)
 				s.Equal(float64(1000), res[0].Price)
-
 				s.Equal("MacBook", res[1].Name)
 				s.Equal(float64(2000), res[1].Price)
 			},
@@ -762,16 +740,15 @@ func (s *listProductSuite) TestList() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-
 			s.productRepo.ExpectedCalls = nil
 			s.productRepo.Calls = nil
 
 			s.productRepo.EXPECT().
-				List(mock.Anything, (*string)(nil), (*uuid.UUID)(nil)).
+				List(mock.Anything, (*string)(nil), (*uuid.UUID)(nil), (*int64)(nil), (*int64)(nil)).
 				Return(tc.mockResp, tc.mockErr).
 				Once()
 
-			res, err := s.svc.List(s.ctx)
+			res, err := s.svc.List(s.ctx, entity.RequestProductList{})
 
 			if tc.wantErr != nil {
 				s.Error(err)
@@ -786,4 +763,88 @@ func (s *listProductSuite) TestList() {
 func (s *updateProductSuite) TestNewService() {
 	svc := NewService(s.productRepo, s.categoryRepo)
 	s.NotNil(svc)
+}
+
+type getByGUIDsProductSuite struct {
+	suite.Suite
+
+	svc          *svc
+	productRepo  *mocks.MockProduct
+	categoryRepo *mocks.MockCategory
+	ctx          context.Context
+}
+
+func (s *getByGUIDsProductSuite) SetupTest() {
+	s.ctx = context.Background()
+	s.productRepo = mocks.NewMockProduct(s.T())
+	s.categoryRepo = mocks.NewMockCategory(s.T())
+	s.svc = &svc{
+		repoProduct:  s.productRepo,
+		repoCategory: s.categoryRepo,
+	}
+}
+
+func TestGetByGUIDsProductSuite(t *testing.T) {
+	suite.Run(t, new(getByGUIDsProductSuite))
+}
+
+func (s *getByGUIDsProductSuite) TestGetByGUIDs() {
+	guid1 := uuid.Must(uuid.NewV4())
+	guid2 := uuid.Must(uuid.NewV4())
+	guid3 := uuid.Must(uuid.NewV4())
+	dbErr := errors.New("db error")
+
+	testCases := []struct {
+		name    string
+		guids   []uuid.UUID
+		wantLen int
+		wantErr error
+		prepare func()
+	}{
+		{
+			name:    "all found",
+			guids:   []uuid.UUID{guid1, guid2},
+			wantLen: 2,
+			prepare: func() {
+				s.productRepo.EXPECT().
+					GetByGUIDs(s.ctx, []uuid.UUID{guid1, guid2}).
+					Return([]entity.Product{{GUID: guid1}, {GUID: guid2}}, nil).Once()
+			},
+		},
+		{
+			name:    "some missing",
+			guids:   []uuid.UUID{guid1, guid2, guid3},
+			wantLen: 2,
+			prepare: func() {
+				s.productRepo.EXPECT().
+					GetByGUIDs(s.ctx, []uuid.UUID{guid1, guid2, guid3}).
+					Return([]entity.Product{{GUID: guid1}, {GUID: guid3}}, nil).Once()
+			},
+		},
+		{
+			name:    "db error",
+			guids:   []uuid.UUID{guid1},
+			wantErr: dbErr,
+			prepare: func() {
+				s.productRepo.EXPECT().
+					GetByGUIDs(s.ctx, []uuid.UUID{guid1}).
+					Return(nil, dbErr).Once()
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			tc.prepare()
+
+			result, err := s.svc.GetByGUIDs(s.ctx, tc.guids)
+
+			if tc.wantErr != nil {
+				s.ErrorIs(err, tc.wantErr)
+			} else {
+				s.NoError(err)
+				s.Len(result, tc.wantLen)
+			}
+		})
+	}
 }
