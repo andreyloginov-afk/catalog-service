@@ -29,7 +29,9 @@ func (r *repoPg) Create(ctx context.Context, category entity.Category) error {
 
 func (r *repoPg) GetByGUIDs(ctx context.Context, guids []uuid.UUID) ([]entity.Category, error) {
 	var categories []entity.Category
-	err := r.NewSelect().Model(&categories).Where("guid IN (?)", bun.List(guids)).Scan(ctx)
+	// bun.List/bun.Tuple render a row constructor (a,b,c) which breaks "guid IN (?)"
+	// with "uuid = record"; bun.In expands to a flat value list, so keep it despite SA1019.
+	err := r.NewSelect().Model(&categories).Where("guid IN (?)", bun.In(guids)).Scan(ctx) //nolint:staticcheck
 	return categories, err
 }
 
